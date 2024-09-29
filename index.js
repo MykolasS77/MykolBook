@@ -12,6 +12,16 @@ app.get("/", (req, res) => {
     res.render("index.ejs");
 });
 
+app.post("/register", (req, res) => {
+    const email = req.body["email"];
+    const password = req.body["password"];
+    console.log(email);
+    console.log(password);
+
+    res.redirect("/");
+
+});
+
 app.listen(port, () => {
     console.log("Listening on port " + port);
 });
