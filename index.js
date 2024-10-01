@@ -5,8 +5,6 @@ import pg from "pg";
 const app = express();
 const port = 3000;
 
-
- 
 const db = new pg.Client({
   user: "postgres",
   password: "123456",
@@ -14,7 +12,6 @@ const db = new pg.Client({
   port: 5432,
   database: "MykolBook",
 });
-
 
 
 db.connect();
@@ -26,7 +23,13 @@ app.get("/", (req, res) => {
     res.render("index.ejs");
 });
 
+app.get("/newUser", (req, res) => {
+    res.render("registration.ejs");
+});
+
+
 app.post("/register", async (req, res) => {
+
     const email = req.body["email"];
     const password = req.body["password"];
     const username = req.body["username"];
@@ -34,26 +37,27 @@ app.post("/register", async (req, res) => {
     console.log(username);
     console.log(email);
     console.log(password);
-    
-    await db.query(
-        "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
-        [username, password, email]
-    );
-    // await db.query(
-    //     "INSERT INTO users (user_password) VALUES ($1)", 
-    //     [password]
-    // );
-    // await db.query(
-    //     "INSERT INTO users (user_email) VALUES ($1)", 
-    //     [email]
-    // );
 
-    res.redirect("/");
+    let data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
+
+    if(data.rows[0] === undefined){
+       await db.query(
+        "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
+        [username, password, email]  
+        );
+        console.log("User created!");
+        res.redirect("/");
+    }
+    else{
+        
+        console.log("Username already exists. Please think of another user name!")
+        res.render("registration.ejs");
+    }
 
 });
-
 
 
 app.listen(port, () => {
     console.log("Listening on port " + port);
 });
+
