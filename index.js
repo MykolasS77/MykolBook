@@ -27,6 +27,7 @@ app.use(express.static("public"));
 
 app.get("/", (req, res) => {
     res.render("index.ejs");
+ 
 });
 
 
@@ -35,27 +36,26 @@ app.post("/register", async (req, res) => {
     email = req.body["email"];
     password = req.body["password"];
     username = req.body["username"];
-    
-    console.log(username);
-    console.log(email);
-    console.log(password);
-
-    
+     
     data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
 
     console.log(data.rows[0]);
     
 
     if(data.rows[0] === undefined){
+
        await db.query(
         "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
         [username, password, email]  
         );
 
-        await db.query(`CREATE TABLE ${username} (id SERIAL PRIMARY KEY, posts TEXT)`);
+        await db.query(`CREATE TABLE ${username} (id SERIAL PRIMARY KEY, post_title TEXT, posts TEXT, date TEXT)`);
 
-        console.log("User created!");
-        res.redirect("/");
+        let message = "User created!";
+
+        res.render("index.ejs", {
+            message: message
+        });
     }
     else{
         
@@ -64,7 +64,7 @@ app.post("/register", async (req, res) => {
         res.render("index.ejs", {
             error_message: userTaken
         });
-        // res.redirect("/")
+    
     }
 
 });
@@ -74,13 +74,7 @@ app.post("/login", async (req, res) => {
     password = req.body["passwordLogin"];
     username = req.body["userLogin"];
     
-    console.log(username);
-    console.log(password);
-
     data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username, password]); 
-
-    console.log(username.toLowerCase());
-    console.log(data.rows[0]);
     
     if(data.rows[0] === undefined){
     
@@ -94,7 +88,7 @@ app.post("/login", async (req, res) => {
     else{    
         
         data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username,password]);
-        posts = await db.query(`SELECT posts FROM ${username.toLowerCase()}`);
+        posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
 
         res.render("user.ejs", {
             data: data.rows[0],
@@ -105,17 +99,26 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/newPost", async (req, res) => {
+    const date = new Date();
+    const postDate = date.toLocaleString('en-GB', { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"});
+    const title = req.body["postTitle"];
     const text = req.body["postText"];
-    console.log(username.toLowerCase());
-    console.log(text);
-    await db.query(`INSERT INTO ${username.toLowerCase()} (posts) VALUES ($1)`, [text]); 
+   
+
+    await db.query(`INSERT INTO ${username.toLowerCase()} (posts, post_title, date) VALUES ($1, $2, $3)`, [text, title, postDate]); 
 
     data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username,password]);
-    posts = await db.query(`SELECT posts FROM ${username.toLowerCase()}`);
+    posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
+
+   
+    console.log(posts.rows);
+
+
+    
 
     res.render("user.ejs", {
         data: data.rows[0],
-        posts: posts.rows
+        posts: posts.rows,
     });    
 
 });

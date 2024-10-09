@@ -25,6 +25,9 @@
     <div class="container">
       <form action="/newPost" method="POST">
         <div class="form-group">
+          <label for="exampleFormControlTextarea1">Title of your post</label>
+          <textarea class="form-control" name="postTitle" id="exampleFormControlTextarea1" rows="1"></textarea>
+        <div class="form-group">
           <label for="exampleFormControlTextarea1">Say something about your day</label>
           <textarea class="form-control" name="postText" id="exampleFormControlTextarea1" rows="6"></textarea>
         </div>
@@ -32,11 +35,16 @@
       </form>
     </div>
 
+
+   
+
   <%if(locals.posts){%>
     
     <%posts.forEach(post => {%>
-      <div class="container">
-        <h1><%=post.posts%></h1>
+      <div class="container mt-3">
+        <h2><%=post.post_title%></h2>
+        <p><%=post.posts%></p>
+        <p class="text-secondary"><%=post.date%></p>
       </div>
       <%})%>
   <%}%>
