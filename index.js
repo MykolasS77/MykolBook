@@ -10,7 +10,7 @@ const db = new pg.Client({
   password: "123456",
   host: "localhost",
   port: 5432,
-  database: "MykolBook", //change parameters accordingly
+  database: "MykolBook", //change user, password and database parameters accordingly
 });
 
 let email;
