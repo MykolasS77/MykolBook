@@ -10,7 +10,7 @@ const db = new pg.Client({
   password: "123456",
   host: "localhost",
   port: 5432,
-  database: "MykolBook",
+  database: "MykolBook", //change parameters accordingly
 });
 
 let email;
@@ -18,6 +18,7 @@ let password;
 let username;
 let data;
 let posts;
+let confirmPassword;
 
 db.connect();
 
@@ -35,14 +36,22 @@ app.post("/register", async (req, res) => {
 
     email = req.body["email"];
     password = req.body["password"];
+    confirmPassword = req.body["confirmPassword"]
     username = req.body["username"];
+
      
     data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
 
     console.log(data.rows[0]);
-    
 
-    if(data.rows[0] === undefined){
+    if(password !== confirmPassword){
+        console.log("Passwords do not match!");
+        let noMatch = "Passwords do not match!";
+        res.render("index.ejs", {
+            error_message: noMatch
+        });
+    }
+    else if(data.rows[0] === undefined){
 
        await db.query(
         "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
@@ -59,8 +68,8 @@ app.post("/register", async (req, res) => {
     }
     else{
         
-        console.log("Username already exists. Please think of another user name!")
-        let userTaken = "Username already exists. Please think of another user name!";
+        console.log("Username already exists. Please think of another username!")
+        let userTaken = "Username already exists. Please think of another username!";
         res.render("index.ejs", {
             error_message: userTaken
         });
