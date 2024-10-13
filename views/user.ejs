@@ -26,17 +26,14 @@
       <form action="/newPost" method="POST">
         <div class="form-group">
           <label for="exampleFormControlTextarea1">Title of your post</label>
-          <textarea class="form-control" name="postTitle" id="exampleFormControlTextarea1" rows="1"></textarea>
+          <textarea class="form-control" name="postTitle" id="exampleFormControlTextarea1" rows="1" required></textarea>
         <div class="form-group">
           <label for="exampleFormControlTextarea1">Say something about your day</label>
-          <textarea class="form-control" name="postText" id="exampleFormControlTextarea1" rows="6"></textarea>
+          <textarea class="form-control" name="postText" id="exampleFormControlTextarea1" rows="6" required></textarea>
         </div>
         <button type="submit" class="btn mt-2 btn-warning">Submit</button>
       </form>
     </div>
-
-
-   
 
   <%if(locals.posts){%>
     
