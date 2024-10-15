@@ -1,6 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
+import bcrypt from "bcrypt";
 
 const app = express();
 const port = 3000;
@@ -15,10 +16,13 @@ const db = new pg.Client({
 
 let email;
 let password;
+let passwordHash;
 let username;
 let data;
 let posts;
 let confirmPassword;
+let saltRounds = 10;
+
 
 db.connect();
 
@@ -38,11 +42,9 @@ app.post("/register", async (req, res) => {
     password = req.body["password"];
     confirmPassword = req.body["confirmPassword"]
     username = req.body["username"];
-
-     
+    
     data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
 
-    console.log(data.rows[0]);
 
     if(password !== confirmPassword){
         console.log("Passwords do not match!");
@@ -53,18 +55,21 @@ app.post("/register", async (req, res) => {
     }
     else if(data.rows[0] === undefined){
 
-       await db.query(
-        "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
-        [username, password, email]  
-        );
+        bcrypt.hash(password, saltRounds, async (err, hash) => {
 
-        await db.query(`CREATE TABLE ${username} (id SERIAL PRIMARY KEY, post_title TEXT, posts TEXT, date TEXT)`);
-
-        let message = "User created!";
-
-        res.render("index.ejs", {
-            message: message
-        });
+            await db.query(
+                "INSERT INTO users (user_name, user_password, user_email) VALUES ($1, $2, $3)", 
+                [username, hash, email]  
+                );
+        
+                await db.query(`CREATE TABLE ${username} (id SERIAL PRIMARY KEY, post_title TEXT, posts TEXT, date TEXT)`);
+        
+                let message = "User created!";
+        
+                res.render("index.ejs", {
+                    message: message
+                });
+        });    
     }
     else{
         
@@ -72,39 +77,39 @@ app.post("/register", async (req, res) => {
         let userTaken = "Username already exists. Please think of another username!";
         res.render("index.ejs", {
             error_message: userTaken
-        });
-    
+        });   
     }
-
 });
 
 app.post("/login", async (req, res) => {
 
     password = req.body["passwordLogin"];
     username = req.body["userLogin"];
-    
-    data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username, password]); 
-    
-    if(data.rows[0] === undefined){
-    
-        console.log("Username or password does not exist.");
-        let incorrect_UP = "Username or password does not exist.";
-        res.render("index.ejs", {
-            error_message: incorrect_UP
-        });
-
-    }
-    else{    
+    data = await db.query("SELECT user_password FROM users WHERE user_name = $1", [username]); 
+    passwordHash = data.rows[0].user_password;
         
-        data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username,password]);
-        posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
+    bcrypt.compare(password, passwordHash, async function(err, result) {   
 
-        res.render("user.ejs", {
-            data: data.rows[0],
-            posts: posts.rows
-        });
-    }
-     
+        if(result === false){
+    
+            console.log("Username or password does not exist.");
+            let incorrect_UP = "Username or password does not exist.";
+            res.render("index.ejs", {
+                error_message: incorrect_UP
+            });
+    
+        }
+        else{    
+            
+            data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
+            posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
+    
+            res.render("user.ejs", {
+                data: data.rows[0],
+                posts: posts.rows
+            });
+        }
+    });    
 });
 
 app.post("/newPost", async (req, res) => {
@@ -116,7 +121,7 @@ app.post("/newPost", async (req, res) => {
 
     await db.query(`INSERT INTO ${username.toLowerCase()} (posts, post_title, date) VALUES ($1, $2, $3)`, [text, title, postDate]); 
 
-    data = await db.query("SELECT * FROM users WHERE user_name = $1 AND user_password = $2", [username,password]);
+    data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
     posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
 
    
