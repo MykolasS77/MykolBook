@@ -86,8 +86,10 @@ app.post("/login", async (req, res) => {
     password = req.body["passwordLogin"];
     username = req.body["userLogin"];
     data = await db.query("SELECT user_password FROM users WHERE user_name = $1", [username]); 
+    
+    if(data.rows[0] !== undefined){
     passwordHash = data.rows[0].user_password;
-        
+     
     bcrypt.compare(password, passwordHash, async function(err, result) {   
 
         if(result === false){
@@ -109,7 +111,15 @@ app.post("/login", async (req, res) => {
                 posts: posts.rows
             });
         }
-    });    
+    });   
+} 
+else{
+    console.log("Username or password does not exist.");
+    let incorrect_UP = "Username or password does not exist.";
+    res.render("index.ejs", {
+        error_message: incorrect_UP
+    });
+}
 });
 
 app.post("/newPost", async (req, res) => {
