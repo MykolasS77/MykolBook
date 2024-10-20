@@ -6,3 +6,14 @@ CREATE TABLE users(
 )
 
 --copy and paste to query in pgAdmin
+
+  <%if(locals.posts){%> 
+    
+    <%posts.forEach(post => {%>
+      <div class="container mt-3">
+        <h2><%=post.post_title%></h2>
+        <p><%=post.posts%></p>
+        <p class="text-secondary"><%=post.date%></p>
+      </div>
+      <%})%>
+  <%}%>

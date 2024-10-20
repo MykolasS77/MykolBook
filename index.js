@@ -2,9 +2,22 @@ import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
 import bcrypt from "bcrypt";
+import passport from "passport";
+import { Strategy } from "passport-local";
+import session from "express-session";
+import env from "dotenv";
 
 const app = express();
 const port = 3000;
+env.config();
+
+app.use(
+    session({
+      secret: "TOPSECRETWORD",
+      resave: false,
+      saveUninitialized: true,
+    })
+  );
 
 const db = new pg.Client({
   user: "postgres",
@@ -23,11 +36,13 @@ let posts;
 let confirmPassword;
 let saltRounds = 10;
 
-
 db.connect();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.get("/", (req, res) => {
@@ -35,6 +50,14 @@ app.get("/", (req, res) => {
  
 });
 
+app.get("/user", (req, res) => {
+    // console.log(req.user);
+    if (req.isAuthenticated()) {
+      res.render("secrets.ejs");
+    } else {
+      res.redirect("/");
+    }
+  });
 
 app.post("/register", async (req, res) => {
 
@@ -83,8 +106,36 @@ app.post("/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
 
-    password = req.body["passwordLogin"];
-    username = req.body["userLogin"];
+    passport.authenticate("local", {
+        successRedirect: "/login",
+        failureRedirect: "/",
+      })
+
+});
+
+app.post("/newPost", async (req, res) => {
+
+    const date = new Date();
+    const postDate = date.toLocaleString('en-GB', { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"});
+    const title = req.body["postTitle"];
+    const text = req.body["postText"];
+   
+    await db.query(`INSERT INTO ${username.toLowerCase()} (posts, post_title, date) VALUES ($1, $2, $3)`, [text, title, postDate]); 
+
+    data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
+    posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
+   
+    console.log(posts.rows);
+
+    res.render("user.ejs", {
+        data: data.rows[0],
+        posts: posts.rows,
+    });    
+
+});
+
+passport.use(new Strategy(async function verify(username , password, cb) { //cia gali but klaida, jeigu is tikro privalo but username ir password. Issiaiskinti ka daryt kitokiais atvejais. Register ir login dabar username ir password tokie patys name, gali klaidu but.
+
     data = await db.query("SELECT user_password FROM users WHERE user_name = $1", [username]); 
     
     if(data.rows[0] !== undefined){
@@ -92,13 +143,18 @@ app.post("/login", async (req, res) => {
      
     bcrypt.compare(password, passwordHash, async function(err, result) {   
 
-        if(result === false){
-    
+        if(err){
+            console.error("Error comparing passwords:", err);
+            return cb(err);
+        }
+        else if(result === false){
+
             console.log("Username or password does not exist.");
             let incorrect_UP = "Username or password does not exist.";
             res.render("index.ejs", {
                 error_message: incorrect_UP
             });
+            return cb(null, false);
     
         }
         else{    
@@ -110,42 +166,28 @@ app.post("/login", async (req, res) => {
                 data: data.rows[0],
                 posts: posts.rows
             });
+
+            return cb(null, user);
         }
     });   
 } 
 else{
-    console.log("Username or password does not exist.");
-    let incorrect_UP = "Username or password does not exist.";
-    res.render("index.ejs", {
-        error_message: incorrect_UP
-    });
+    // console.log("Username or password does not exist.");
+    // let incorrect_UP = "Username or password does not exist.";
+    // res.render("index.ejs", {
+    //     error_message: incorrect_UP
+    // });
+    return cb(null, false);
 }
-});
 
-app.post("/newPost", async (req, res) => {
-    const date = new Date();
-    const postDate = date.toLocaleString('en-GB', { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"});
-    const title = req.body["postTitle"];
-    const text = req.body["postText"];
-   
+}));
 
-    await db.query(`INSERT INTO ${username.toLowerCase()} (posts, post_title, date) VALUES ($1, $2, $3)`, [text, title, postDate]); 
-
-    data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
-    posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
-
-   
-    console.log(posts.rows);
-
-
-    
-
-    res.render("user.ejs", {
-        data: data.rows[0],
-        posts: posts.rows,
-    });    
-
-});
+passport.serializeUser((user, cb) => {
+    cb(null, user);
+  });
+passport.deserializeUser((user, cb) => {
+    cb(null, user);
+  });
 
 
 app.listen(port, () => {
