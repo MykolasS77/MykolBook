@@ -17,3 +17,7 @@ CREATE TABLE users(
       </div>
       <%})%>
   <%}%>
+
+  <div class="container">
+        <h1>Welcome, <%=data.user_name %></h1>
+    </div>

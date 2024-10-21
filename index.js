@@ -50,21 +50,25 @@ app.get("/", (req, res) => {
  
 });
 
-app.get("/user", (req, res) => {
-    // console.log(req.user);
+app.get("/login", (req, res) => {
+    console.log(req.user);
     if (req.isAuthenticated()) {
-      res.render("secrets.ejs");
+      res.render("user.ejs");
     } else {
-      res.redirect("/");
+      console.log("error login in");
     }
   });
 
 app.post("/register", async (req, res) => {
 
     email = req.body["email"];
-    password = req.body["password"];
+    password = req.body["password1"];
     confirmPassword = req.body["confirmPassword"]
-    username = req.body["username"];
+    username = req.body["username1"];
+
+    console.log(password);
+    console.log(confirmPassword);
+
     
     data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
 
@@ -104,7 +108,7 @@ app.post("/register", async (req, res) => {
     }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", (req, res) => {
 
     passport.authenticate("local", {
         successRedirect: "/login",
@@ -134,60 +138,31 @@ app.post("/newPost", async (req, res) => {
 
 });
 
-passport.use(new Strategy(async function verify(username , password, cb) { //cia gali but klaida, jeigu is tikro privalo but username ir password. Issiaiskinti ka daryt kitokiais atvejais. Register ir login dabar username ir password tokie patys name, gali klaidu but.
+//cia gali but klaida, jeigu is tikro privalo but username ir password. Issiaiskinti ka daryt kitokiais atvejais. Register ir login dabar username ir password tokie patys name, gali klaidu but.
 
-    data = await db.query("SELECT user_password FROM users WHERE user_name = $1", [username]); 
-    
-    if(data.rows[0] !== undefined){
-    passwordHash = data.rows[0].user_password;
-     
-    bcrypt.compare(password, passwordHash, async function(err, result) {   
+    passport.use(
+        new Strategy(async function verify(username, password, cb) {
 
-        if(err){
-            console.error("Error comparing passwords:", err);
-            return cb(err);
-        }
-        else if(result === false){
+            console.log(username);
+            console.log(password);
+            const result = await db.query("SELECT * FROM users WHERE user_name = $1 ", [
+              username,])
 
-            console.log("Username or password does not exist.");
-            let incorrect_UP = "Username or password does not exist.";
-            res.render("index.ejs", {
-                error_message: incorrect_UP
-            });
-            return cb(null, false);
-    
-        }
-        else{    
+            return console.log(result);
             
-            data = await db.query("SELECT * FROM users WHERE user_name = $1", [username]);
-            posts = await db.query(`SELECT posts, post_title, date FROM ${username.toLowerCase()}`);
-    
-            res.render("user.ejs", {
-                data: data.rows[0],
-                posts: posts.rows
-            });
+            
+        })
+      );
 
-            return cb(null, user);
-        }
-    });   
-} 
-else{
-    // console.log("Username or password does not exist.");
-    // let incorrect_UP = "Username or password does not exist.";
-    // res.render("index.ejs", {
-    //     error_message: incorrect_UP
-    // });
-    return cb(null, false);
-}
+      passport.serializeUser((user, cb) => {
+        cb(null, user);
+      });
+      passport.deserializeUser((user, cb) => {
+        cb(null, user);
+      });
 
-}));
 
-passport.serializeUser((user, cb) => {
-    cb(null, user);
-  });
-passport.deserializeUser((user, cb) => {
-    cb(null, user);
-  });
+
 
 
 app.listen(port, () => {
