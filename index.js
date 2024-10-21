@@ -37,7 +37,6 @@ let confirmPassword;
 let saltRounds = 10;
 
 db.connect();
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
@@ -108,14 +107,14 @@ app.post("/register", async (req, res) => {
     }
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", 
 
     passport.authenticate("local", {
         successRedirect: "/login",
         failureRedirect: "/",
       })
 
-});
+);
 
 app.post("/newPost", async (req, res) => {
 
@@ -142,17 +141,28 @@ app.post("/newPost", async (req, res) => {
 
     passport.use(
         new Strategy(async function verify(username, password, cb) {
-
-            console.log(username);
-            console.log(password);
-            const result = await db.query("SELECT * FROM users WHERE user_name = $1 ", [
-              username,])
-
-            return console.log(result);
+           try{
+             const result = await db.query("SELECT * FROM users WHERE user_name = $1 ", [
+               username])
             
+            const user = result.rows.user_name;
+            const hashedPasswordCheck = result.rows.user_password;
             
-        })
-      );
+            console.log(user);
+            console.log(hashedPasswordCheck);
+            
+            if(user === undefined){
+                console.log("eik nx");
+            }
+
+            }
+            catch(err){
+                console.log(err);
+            }
+    }));
+            
+        
+    
 
       passport.serializeUser((user, cb) => {
         cb(null, user);
