@@ -34,6 +34,7 @@ let data;
 let posts;
 let confirmPassword;
 let saltRounds = 10;
+let createPost = false;
 
 db.connect();
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -54,10 +55,10 @@ app.get("/login", async (req, res) => {
     if (req.isAuthenticated()) {
     username = req.user.user_name;
     const posts = await db.query(`SELECT * FROM ${username.toLowerCase()} `)
-    console.log(posts.rows);
       res.render("user.ejs",{
         data: req.user,
-        posts: posts.rows
+        posts: posts.rows,
+        createPost: createPost
       });
     } else {
       console.log("error login in");
@@ -123,6 +124,13 @@ app.post("/login",
 
 );
 
+app.post("/createPost", (req, res) => {
+  console.log("sveiki");
+  createPost = true;
+  res.redirect("/login");
+})
+
+
 app.post("/newPost", async (req, res) => {
 
     const date = new Date();
@@ -138,9 +146,15 @@ app.post("/newPost", async (req, res) => {
    
     console.log(posts.rows);
 
+    createPost = false;
     res.redirect("/login");  
 
 });
+
+app.post("/cancel", (req, res) => {
+  createPost = false;
+  res.redirect("/login")
+})
 
 //cia gali but klaida, jeigu is tikro privalo but username ir password. Issiaiskinti ka daryt kitokiais atvejais. Register ir login dabar username ir password tokie patys name, gali klaidu but.
 
@@ -182,19 +196,12 @@ app.post("/newPost", async (req, res) => {
             }
     }));
             
-        
-    
-
       passport.serializeUser((user, cb) => {
         cb(null, user);
       });
       passport.deserializeUser((user, cb) => {
         cb(null, user);
       });
-
-
-
-
 
 app.listen(port, () => {
     console.log("Listening on port " + port);

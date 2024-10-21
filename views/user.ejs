@@ -20,9 +20,14 @@
 
     <div class="container">
       <h1>Welcome, <%=data.user_name %></h1>
+      <% if(createPost === false) {%>
+      <form action="/createPost" method="POST">
+      <button type="submit" class="btn mt-2 btn-warning">Create a Post</button>
+      </form>
+      <%}%>
   </div>
   
-    
+    <% if(createPost === true) {%>
     <div class="container">
       <form action="/newPost" method="POST">
         <div class="form-group">
@@ -33,8 +38,10 @@
           <textarea class="form-control" name="postText" id="exampleFormControlTextarea1" rows="6" required></textarea>
         </div>
         <button type="submit" class="btn mt-2 btn-warning">Submit</button>
+        <button type="submit" formaction="/cancel" class="btn mt-2 btn-danger" formnovalidate>Cancel</button>
       </form>
     </div>
+    <%}%>
 
     <%if(locals.posts){%> 
     
