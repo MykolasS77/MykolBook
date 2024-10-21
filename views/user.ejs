@@ -17,6 +17,10 @@
                 </div>
             </div>
     </header>
+
+    <div class="container">
+      <h1>Welcome, <%=data.user_name %></h1>
+  </div>
   
     
     <div class="container">
@@ -31,6 +35,17 @@
         <button type="submit" class="btn mt-2 btn-warning">Submit</button>
       </form>
     </div>
+
+    <%if(locals.posts){%> 
+    
+      <%posts.forEach(post => {%>
+        <div class="container mt-3">
+          <h2><%=post.post_title%></h2>
+          <p><%=post.posts%></p>
+          <p class="text-secondary"><%=post.date%></p>
+        </div>
+        <%})%>
+    <%}%>
 
 
 

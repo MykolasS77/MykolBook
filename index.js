@@ -49,10 +49,15 @@ app.get("/", (req, res) => {
  
 });
 
-app.get("/login", (req, res) => {
+app.get("/login", async (req, res) => {
     console.log(req.user);
     if (req.isAuthenticated()) {
-      res.render("user.ejs");
+    const posts = await db.query(`SELECT * FROM ${req.user.user_name.toLowerCase()} `)
+    console.log(posts.rows);
+      res.render("user.ejs",{
+        data: req.user,
+        posts: posts.rows
+      });
     } else {
       console.log("error login in");
     }
@@ -143,16 +148,32 @@ app.post("/newPost", async (req, res) => {
         new Strategy(async function verify(username, password, cb) {
            try{
              const result = await db.query("SELECT * FROM users WHERE user_name = $1 ", [
-               username])
+               username]);
             
-            const user = result.rows.user_name;
-            const hashedPasswordCheck = result.rows.user_password;
-            
-            console.log(user);
-            console.log(hashedPasswordCheck);
-            
-            if(user === undefined){
-                console.log("eik nx");
+            if(result.rows[0] === undefined){
+                return cb("User not found");
+            }
+            else{
+
+                username = result.rows[0];
+                const hashedPasswordCheck = result.rows[0].user_password;
+
+                bcrypt.compare(password, hashedPasswordCheck, (err, valid) => {
+
+                    if (err) {
+                        //Error with password check
+                        console.error("Error comparing passwords:", err);
+                        return cb(err);
+                      } 
+                    else if(valid){
+                        return cb(null, username);
+                    }
+                    else {
+                        //Did not pass password check
+                        return cb(null, false);
+                      }
+                
+                })
             }
 
             }
