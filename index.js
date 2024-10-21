@@ -29,7 +29,6 @@ const db = new pg.Client({
 
 let email;
 let password;
-let passwordHash;
 let username;
 let data;
 let posts;
@@ -51,8 +50,10 @@ app.get("/", (req, res) => {
 
 app.get("/login", async (req, res) => {
     console.log(req.user);
+    
     if (req.isAuthenticated()) {
-    const posts = await db.query(`SELECT * FROM ${req.user.user_name.toLowerCase()} `)
+    username = req.user.user_name;
+    const posts = await db.query(`SELECT * FROM ${username.toLowerCase()} `)
     console.log(posts.rows);
       res.render("user.ejs",{
         data: req.user,
@@ -60,6 +61,7 @@ app.get("/login", async (req, res) => {
       });
     } else {
       console.log("error login in");
+      res.redirect("/");
     }
   });
 
@@ -127,6 +129,7 @@ app.post("/newPost", async (req, res) => {
     const postDate = date.toLocaleString('en-GB', { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"});
     const title = req.body["postTitle"];
     const text = req.body["postText"];
+    console.log(username);
    
     await db.query(`INSERT INTO ${username.toLowerCase()} (posts, post_title, date) VALUES ($1, $2, $3)`, [text, title, postDate]); 
 
@@ -135,10 +138,7 @@ app.post("/newPost", async (req, res) => {
    
     console.log(posts.rows);
 
-    res.render("user.ejs", {
-        data: data.rows[0],
-        posts: posts.rows,
-    });    
+    res.redirect("/login");  
 
 });
 
